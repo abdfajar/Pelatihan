@@ -436,9 +436,5 @@ flowchart LR
 > - 99.98% availability selama 12 bulan  
 > - Lulus audit keamanan BSSN Level 4  
 
-**Repositori Contoh**:  
-- [Layanan Pendaftaran (Go)](https://github.com/contoh/gov-pendaftaran)  
-- [Layanan Statistik (Node.js)](https://github.com/contoh/gov-statistik)  
-- [Terraform Deployment](https://github.com/contoh/gov-infra)  
 
 Studi kasus ini menunjukkan bagaimana arsitektur microservices modern dengan kombinasi Node.js/Go dapat mendukung sistem pemerintah yang kompleks, aman, dan scalable! 🏛️🚀
