@@ -138,7 +138,130 @@ flowchart LR
    [Event 1] PermohonanIzinDibuat  
    [Event 2] IzinDisetujui  
    [Event 3] IzinDikirim  
-   ```  
+   ```
+   Berikut diagram untuk alur event **Permohonan Izin Usaha** menggunakan Mermaid:
+
+##### Diagram 1: Alur Event Sederhana (Sequence Flow)
+```mermaid
+flowchart LR
+    A[Event 1\n\nPermohonanIzinDibuat] --> B[Event 2\n\nIzinDisetujui] --> C[Event 3\n\nIzinDikirim]
+```
+
+##### Diagram 2: Arsitektur Lengkap dengan Event Sourcing & CQRS
+```mermaid
+flowchart TB
+    subgraph Command Side
+        direction TB
+        A[Frontend] -->|1. Buat Permohonan| B[Command Service]
+        B -->|2. Simpan Event| C[(Event Store)]
+        C -->|3. Publish| D[Event Bus]
+    end
+
+    subgraph Event Processing
+        direction LR
+        D --> E[Projection Service]
+        E -->|Update| F[(Read Database)]
+    end
+
+    subgraph Query Side
+        G[Frontend] -->|5. Query Status| H[Query Service]
+        H --> F
+    end
+
+    D -->|4. Trigger| I[Notification Service]
+    I -->|SMS/Email| J[Pemohon]
+
+    style Command Side fill:#f9f,stroke:#333
+    style Query Side fill:#9f9,stroke:#333
+```
+
+##### Penjelasan Diagram:
+1. ***Alur Command*** (Warna Ungu):
+   - User membuat permohonan izin → Command Service menyimpan event `PermohonanIzinDibuat` di Event Store
+   - Event dipublikasikan ke Event Bus (Kafka/RabbitMQ)
+
+2. ***Event Processing***:
+   - Projection Service mengonsumsi event dan meng-update Read Database (optimized for query)
+   - Notification Service mengirim notifikasi ke pemohon
+
+3. ***Alur Query*** (Warna Hijau):
+   - User mengecek status izin → Query Service membaca dari Read Database
+
+##### Diagram 3: State Rekonstruksi (Event Sourcing)
+```mermaid
+flowchart LR
+    S0[State Awal] -->|Event 1\nPermohonanIzinDibuat| S1[State: DRAFT]
+    S1 -->|Event 2\nIzinDisetujui| S2[State: APPROVED]
+    S2 -->|Event 3\nIzinDikirim| S3[State: DELIVERED]
+```
+
+##### Contoh Payload Event:
+```json
+// Event 1: PermohonanIzinDibuat
+{
+  "event_id": "evt_iz001",
+  "application_id": "IZ2023-789",
+  "applicant": "PT. Maju Jaya",
+  "created_at": "2023-11-05T09:15:00Z",
+  "service_type": "Izin Usaha"
+}
+
+// Event 2: IzinDisetujui
+{
+  "event_id": "evt_iz002",
+  "application_id": "IZ2023-789",
+  "approver_id": "officer_456",
+  "approved_at": "2023-11-07T14:20:00Z",
+  "notes": "Lengkapi dokumen lingkungan"
+}
+
+// Event 3: IzinDikirim
+{
+  "event_id": "evt_iz003",
+  "application_id": "IZ2023-789",
+  "delivery_method": "EMAIL",
+  "sent_at": "2023-11-08T10:05:00Z",
+  "recipient": "contact@majujaya.id"
+}
+```
+
+##### Diagram 4: Interaksi Sistem (Sequence Diagram)
+```mermaid
+sequenceDiagram
+    participant User
+    participant CommandService
+    participant EventStore
+    participant EventBus
+    participant ProjectionService
+    participant ReadDB
+    participant QueryService
+    
+    User->>CommandService: Ajukan Izin Usaha
+    CommandService->>EventStore: Save Event: PermohonanIzinDibuat
+    EventStore->>EventBus: Publish Event
+    CommandService-->>User: Permohonan diterima
+    
+    EventBus->>ProjectionService: Consume Event
+    ProjectionService->>ReadDB: Update view_permohonan_izin
+    
+    User->>QueryService: Cek Status Izin
+    QueryService->>ReadDB: SELECT status FROM view_permohonan_izin
+    ReadDB-->>QueryService: Status: DRAFT
+    QueryService-->>User: Tampilkan status
+```
+
+##### Keuntungan Penerapan di Sektor Pemerintah:
+1. ***Transparansi Proses***:
+   - Setiap tahap (pengajuan > persetujuan > pengiriman) terekam immutable
+2. ***Pemulihan Data***:
+   - Jika database rusak, state bisa direkonstruksi dari event history
+3. ***Integrasi Sistem***:
+   - Dinas terkait (perdagangan, lingkungan) bisa subscribe event tertentu
+   ```mermaid
+   flowchart LR
+       EventBus -->|Event IzinDisetujui| DinasPerdagangan
+       EventBus -->|Event IzinDisetujui| DinasLingkungan
+   ```
 3. **CQRS**:  
    - **Query Side**: Bangun view `izin_status` di database baca untuk tracking real-time.  
 
